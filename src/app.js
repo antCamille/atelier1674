@@ -175,9 +175,10 @@ function update(progress,draw=true){
  edge.set(-.00034085,.00190692,-.1013203).multiplyScalar(2.18).applyQuaternion(clipper.quaternion);clipper.position.copy(tip).sub(edge);clipper.visible=p<.91;
  if(blade)blade.position.x=bladeX+.0005*Math.sin(p*2600)*(active?1:0);
  const yaw=angleAt(p)+experience.yaw,{w,h,mobile,portrait,short}=viewport,f=experience.focus;
- const radius=portrait?lerp(3.0,h<=680?4.6:4.2,f):(short?2.5:1.9);
- camera.position.set(Math.sin(yaw)*radius,.24+Math.sin(p*Math.PI)*.09,Math.cos(yaw)*radius);camera.lookAt(0,.03,0);
- if(f!==lastViewFocus){const cx=portrait?lerp(.62,.50,f):lerp(.58,.29,f),cy=portrait?lerp(.58,.18,f):.51;camera.setViewOffset(w,h,(.5-cx)*w,(.5-cy)*h,w,h);lastViewFocus=f;}camera.updateMatrixWorld();
+ // Keep the asset large and centered behind the page throughout every chapter.
+ const radius=portrait?2.6:(short?2.25:1.75);
+ camera.position.set(Math.sin(yaw)*radius,.24,Math.cos(yaw)*radius);camera.lookAt(0,.03,0);
+ if(f!==lastViewFocus){const cx=.5,cy=.5;camera.setViewOffset(w,h,(.5-cx)*w,(.5-cy)*h,w,h);lastViewFocus=f;}camera.updateMatrixWorld();
  const section=experience.sectionIndex,transitioning=app.classList.contains('transitioning');let selectedX=0,selectedY=0;
  if(!transitioning)for(let i=0;i<hotspots.length;i++){if(section>0&&i!==section-1)continue;project.copy(anchors[i]).project(camera);const sx=(project.x*.5+.5)*w,sy=(-project.y*.5+.5)*h;hotspots[i].style.transform=`translate3d(${sx-(mobile?22:12)}px,${sy-(mobile?22:23)}px,0)`;hotspots[i].style.visibility=project.z>1?'hidden':'visible';if(i===section-1){selectedX=sx;selectedY=sy;}}
  if(!transitioning&&section>0&&!mobile)connector.setAttribute('d',`M ${selectedX} ${selectedY} L ${viewport.panelX-28} ${selectedY} L ${viewport.panelX} ${viewport.panelY+35}`);else connector.setAttribute('d','');
