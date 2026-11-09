@@ -1,0 +1,14 @@
+{
+  "name": "latelier-1674",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "preview": "node scripts/preview.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": { "three": "0.183.2" },
+  "devDependencies": { "esbuild": "0.25.12" }
+}

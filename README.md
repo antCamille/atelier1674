@@ -45,7 +45,7 @@ For an intended search-indexed launch, update the robots meta tag in `src/templa
 - `src/business-content.js` and `src/business-data.js`: copy, contact links, team and gallery.
 - `src/layout.js` and `src/native-mobile-scroll.js`: navigation and scrolling.
 - `src/app.js` and the other scene modules: 3D behavior and materials.
-- `public/assets/`: images and desktop/mobile GLB models.
+- `public/assets/`: images and desktop/mobile GLB models. Two head models are stored as lossless `.glb.gz` files; the build restores their exact original `.glb` bytes and verifies their SHA-256 hashes from `compressed-models.json`.
 - `scripts/build.mjs`: portable static build using esbuild; emits `dist/`.
 
 ## Verification and limitations
@@ -57,3 +57,9 @@ See `VERIFICATION.md` for checks run on this export. Physical-phone Safari behav
 Hair Clipper by **ADopustim (Artem D.)**, [Cad Crowd source](https://www.cadcrowd.com/3d-models/hair-clipper), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The model was converted and simplified; materials, animated blade and reversible hair deformation were adapted. Preserve the visible in-page attribution and `THIRD_PARTY_NOTICES.md` when redistributing.
 
 Three.js is MIT-licensed; its license is included in `public/THREE-LICENSE.txt` and copied into the deployed site. The business's logo, portraits and media remain subject to their owners' rights. Their inclusion is not a new license grant.
+
+## Wizzards motion revision
+
+This local revision adapts the motion controller retrieved from https://tattoowebsite-xi.vercel.app/ on 2026-11-09. Section navigation now travels around the barber asset before revealing the information panel. Panels extend from below the header to above the footer, with larger phone reading areas. One native document scroller controls travel and reading; the panel is not a separate scroll container. The camera holds its destination during reading. Business data and models remain unchanged.
+
+The reference input module is retained for source comparison only; it is not imported because the barber experience preserves native document scrolling. No tattoo branding, customer content or artwork was transplanted.
