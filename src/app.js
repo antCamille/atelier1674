@@ -5,6 +5,7 @@ import { experience } from './layout.js';
 import { installSkinStudy } from './skin-study.js';
 import { selectRenderQuality } from './mobile-quality.js';
 import { installEyeRestoration } from './eye-restoration.js';
+import {HEAD_HOTSPOTS,connectorPath,markerInViewport} from './head-hotspots.js';
 import { cameraAngleAt } from './motion-path.js';
 import { prepareMobileHairGeometry } from './mobile-hair.js';
 
@@ -118,6 +119,7 @@ const parse=async id=>{
 Promise.all([parse('head-data'),parse('clipper-data'),parse('density-data')]).then(async([h,c,d])=>{
  if(stopped){[h,c,d].forEach(g=>release(g.scene));return;}
  head=h.scene;head.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.metalness=0;o.material.roughness=.92;o.material.side=THREE.DoubleSide;patchMaterial(o.material,false,false,quality.mobile?prepareMobileHairGeometry(o.geometry,{stroke:STROKE}):null);if(o.name==='geometry_0')skinStudy=installSkinStudy(o.material,{enabled:true,onLoad:()=>experience.repaint()});o.frustumCulled=false;}});subject.add(head);d.scene.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.side=THREE.DoubleSide;o.material.metalness=0;o.material.roughness=.98;const backing=o.name==='Runtime_Hair_Backing';patchMaterial(o.material,true,backing,quality.mobile?prepareMobileHairGeometry(o.geometry,{stroke:STROKE,allHair:true,backing}):null);o.frustumCulled=false;}});subject.add(d.scene);
+ attachMarkersToSurface();
  clipper=c.scene;clipper.scale.setScalar(2.18);clipper.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.envMapIntensity=1.8;}});subject.add(clipper);blade=clipper.getObjectByName('Moving_Blade');if(blade)bladeX=blade.position.x;
  eyeRestoration=installEyeRestoration(head.getObjectByName('geometry_0'),{enabled:true,onLoad:()=>experience.repaint()});
  await Promise.all([skinStudy?.ready,eyeRestoration.ready]);
@@ -146,7 +148,20 @@ function angleAt(progress){
  return cameraAngleAt(progress);
 }
 const scratch={n:new THREE.Vector3(),tip:new THREE.Vector3(),around:new THREE.Vector3(),travel:new THREE.Vector3(),z:new THREE.Vector3(),x:new THREE.Vector3(),yy:new THREE.Vector3(),edge:new THREE.Vector3(),project:new THREE.Vector3(),matrix:new THREE.Matrix4()};
-const anchors=[[.05,.39,.12],[.22,.30,.03],[.16,.04,.08],[.02,-.18,.22]].map(q=>new THREE.Vector3(...q));
+const anchors=HEAD_HOTSPOTS.map(({theta,y},i)=>{
+ hotspots[i].setAttribute('aria-label',HEAD_HOTSPOTS[i].label);
+ const a=theta*Math.PI/180;return new THREE.Vector3(Math.sin(a)*.23,y,Math.cos(a)*.25);
+});
+function attachMarkersToSurface(){
+ head.updateMatrixWorld(true);
+ const ray=new THREE.Raycaster();
+ HEAD_HOTSPOTS.forEach(({theta,y},i)=>{
+  const a=theta*Math.PI/180,normal=new THREE.Vector3(Math.sin(a),0,Math.cos(a));
+  ray.set(normal.clone().multiplyScalar(1).setY(y),normal.clone().negate());
+  const hit=ray.intersectObject(head,true)[0];
+  if(hit)anchors[i].copy(hit.point).addScaledVector(normal,.004);
+ });
+}
 const particleData=Array.from({length:72},(_,i)=>{const seed=Math.sin(i*71.17)*43758.55;return {cos:Math.cos(i*9.1),sin:Math.sin(i*9.1),scale:.5+seed-Math.floor(seed)};});
 function update(progress,draw=true){
  const started=performance.now(),moving=!!(experience.isAnimating||experience.isDirectManipulation);
@@ -180,8 +195,8 @@ function update(progress,draw=true){
  camera.position.set(Math.sin(yaw)*radius,.24,Math.cos(yaw)*radius);camera.lookAt(0,.03,0);
  if(f!==lastViewFocus){const cx=.5,cy=.5;camera.setViewOffset(w,h,(.5-cx)*w,(.5-cy)*h,w,h);lastViewFocus=f;}camera.updateMatrixWorld();
  const section=experience.sectionIndex,transitioning=app.classList.contains('transitioning');let selectedX=0,selectedY=0;
- if(!transitioning)for(let i=0;i<hotspots.length;i++){if(section>0&&i!==section-1)continue;project.copy(anchors[i]).project(camera);const sx=(project.x*.5+.5)*w,sy=(-project.y*.5+.5)*h;hotspots[i].style.transform=`translate3d(${sx-(mobile?22:12)}px,${sy-(mobile?22:23)}px,0)`;hotspots[i].style.visibility=project.z>1?'hidden':'visible';if(i===section-1){selectedX=sx;selectedY=sy;}}
- if(!transitioning&&section>0&&!mobile)connector.setAttribute('d',`M ${selectedX} ${selectedY} L ${viewport.panelX-28} ${selectedY} L ${viewport.panelX} ${viewport.panelY+35}`);else connector.setAttribute('d','');
+ if(!transitioning)for(let i=0;i<hotspots.length;i++){if(section>0&&i!==section-1)continue;project.copy(anchors[i]).project(camera);const sx=(project.x*.5+.5)*w,sy=(-project.y*.5+.5)*h;hotspots[i].style.transform=`translate3d(${sx-(mobile?22:12)}px,${sy-(mobile?22:23)}px,0)`;hotspots[i].style.visibility=markerInViewport(sx,sy,project.z,w,h)?'visible':'hidden';if(i===section-1){selectedX=sx;selectedY=sy;}}
+ if(!transitioning&&section>0&&!mobile&&app.classList.contains('panel-visible'))connector.setAttribute('d',connectorPath(selectedX,selectedY,viewport.panelX,viewport.panelY+25));else connector.setAttribute('d','');
  specks.visible=active;
  if(active){for(let i=0;i<72;i++){const age=(i/72+t*5)%1,data=particleData[i];dummy.position.copy(tip).addScaledVector(n,age*.15);dummy.position.x+=data.cos*age*.09;dummy.position.y-=age*age*.32;dummy.position.z+=data.sin*age*.09;dummy.rotation.set(i+age*5,age*8,i*.7);dummy.scale.setScalar((1-age)*data.scale);dummy.updateMatrix();specks.setMatrixAt(i,dummy.matrix);}specks.instanceMatrix.needsUpdate=true;}
  if(draw){renderer.render(scene,camera);perf.cpu[perf.cpuCount++%120]=performance.now()-started;perf.frames++;}

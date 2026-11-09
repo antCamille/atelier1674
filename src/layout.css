@@ -146,3 +146,10 @@ html.native-mobile::-webkit-scrollbar{display:none}
 /* The background asset no longer shifts up or shrinks when content opens. */
 .no-webgl .scene-poster,.no-webgl:not(.focused) .scene-poster,.focused.no-webgl .scene-poster{background-position:50% 50%;background-size:auto 92%}
 @media(max-width:760px) and (min-height:481px){.no-webgl .scene-poster,.no-webgl:not(.focused) .scene-poster,.focused.no-webgl .scene-poster{background-position:50% 50%;background-size:auto 66%}}
+/* Reference-style red surface pins. Keep the ring readable against skin/hair. */
+.hotspot .dot{border-color:rgba(239,51,73,.8);background:rgba(7,7,8,.65);box-shadow:0 0 20px #0006}
+.hotspot .dot:after{background:#ef3349;width:5px;height:5px}
+.hotspot:focus-visible{outline:2px solid #ef3349;outline-offset:5px;border-radius:4px}
+.hotspot.selected .dot{background:rgba(239,51,73,.18);box-shadow:0 0 24px rgba(239,51,73,.2)}
+#connector path{stroke:rgba(239,51,73,.6)}
+@media(min-width:761px) and (min-height:481px){#panel{width:min(44%,760px)}}
