@@ -137,3 +137,8 @@ html.native-mobile::-webkit-scrollbar{display:none}
 /* The document remains the only scroll owner, on desktop and touch. */
 .native-mobile .panel-scroll{overflow-y:hidden;overscroll-behavior:auto;touch-action:pan-y pinch-zoom}
 .native-mobile #scene{touch-action:pan-y pinch-zoom}
+
+/* Larger, more central head framing, matching the reference emphasis. */
+.no-webgl:not(.focused) .scene-poster{background-position:58% center;background-size:auto 85%}
+.focused.no-webgl .scene-poster{background-position:29% center;background-size:auto 85%}
+@media(max-width:760px) and (min-height:481px){.no-webgl:not(.focused) .scene-poster{background-position:62% 58%;background-size:auto 57%}.focused.no-webgl .scene-poster{background-position:50% 8%;background-size:auto 32%}}
