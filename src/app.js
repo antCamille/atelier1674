@@ -6,7 +6,7 @@ import { installSkinStudy } from './skin-study.js';
 import { selectRenderQuality } from './mobile-quality.js';
 import { installEyeRestoration } from './eye-restoration.js';
 import {HEAD_HOTSPOTS,connectorPath,markerInViewport} from './head-hotspots.js';
-import { cameraAngleAt } from './motion-path.js';
+import {cameraCoordinates} from './camera-choreography.js';
 import { prepareMobileHairGeometry } from './mobile-hair.js';
 
 function initScene(timeoutMs=45000){
@@ -25,7 +25,7 @@ function selectSkin(enabled){skinStudy?.setEnabled(enabled);eyeRestoration?.setE
 skinButtons.forEach(b=>b.addEventListener('click',()=>selectSkin(b.dataset.skin==='study')));
 try {renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'default'});}catch(e){skinButtons.forEach(b=>b.disabled=true);$('#skin-study-state').textContent='Live material switching needs WebGL. The comparison is an offline render.';experience.error('La 3D n’est pas disponible dans ce navigateur. Une image fixe la remplace ; toutes les rubriques restent accessibles.');return;}
 renderer.setPixelRatio(pixelRatio);renderer.setClearColor(0x000000,0);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;main.appendChild(renderer.domElement);
-const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(32,1,.01,50);
+const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(43,1,.01,50);
 const pmrem=new THREE.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
 scene.add(new THREE.HemisphereLight(0xeaf2fc,0x373032,1.1));
 for(const [c,i,p] of [[0xf5f2ea,2.2,[2,3,3]],[0xa3c5ff,1.6,[-2,1,-1]],[0xfbe4c6,2.4,[1,2,-2]]]){const l=new THREE.DirectionalLight(c,i);l.position.set(...p);scene.add(l);}
@@ -144,9 +144,6 @@ function pathState(progress){
  if(progress>STROKE.end)lift=.32*smooth((progress-STROKE.end)/.12);
  return {theta,y,lift,t,active:progress>STROKE.start&&progress<STROKE.end};
 }
-function angleAt(progress){
- return cameraAngleAt(progress);
-}
 const scratch={n:new THREE.Vector3(),tip:new THREE.Vector3(),around:new THREE.Vector3(),travel:new THREE.Vector3(),z:new THREE.Vector3(),x:new THREE.Vector3(),yy:new THREE.Vector3(),edge:new THREE.Vector3(),project:new THREE.Vector3(),matrix:new THREE.Matrix4()};
 const anchors=HEAD_HOTSPOTS.map(({theta,y},i)=>{
  hotspots[i].setAttribute('aria-label',HEAD_HOTSPOTS[i].label);
@@ -189,18 +186,18 @@ function update(progress,draw=true){
  clipper.quaternion.setFromRotationMatrix(matrix.makeBasis(x,yy,z));
  edge.set(-.00034085,.00190692,-.1013203).multiplyScalar(2.18).applyQuaternion(clipper.quaternion);clipper.position.copy(tip).sub(edge);clipper.visible=p<.91;
  if(blade)blade.position.x=bladeX+.0005*Math.sin(p*2600)*(active?1:0);
- const yaw=angleAt(p)+experience.yaw,{w,h,mobile,portrait,short}=viewport,f=experience.focus;
- // Keep the asset large and centered behind the page throughout every chapter.
- const radius=portrait?2.6:(short?2.25:1.75);
- camera.position.set(Math.sin(yaw)*radius,.24,Math.cos(yaw)*radius);camera.lookAt(0,.03,0);
- if(f!==lastViewFocus){const cx=.5,cy=.5;camera.setViewOffset(w,h,(.5-cx)*w,(.5-cy)*h,w,h);lastViewFocus=f;}camera.updateMatrixWorld();
+ const pose=experience.cameraPose,yaw=pose.theta+experience.yaw,{w,h,mobile}=viewport;
+ const position=cameraCoordinates(pose,experience.yaw);
+ camera.position.set(position.x,position.y,position.z);camera.lookAt(0,position.targetY,0);
+ // Identical projection-shift convention to the reference renderer.
+ camera.setViewOffset(w,h,pose.sx*w/2,-pose.sy*h/2,w,h);camera.updateMatrixWorld();
  const section=experience.sectionIndex,transitioning=app.classList.contains('transitioning');let selectedX=0,selectedY=0;
  if(!transitioning)for(let i=0;i<hotspots.length;i++){if(section>0&&i!==section-1)continue;project.copy(anchors[i]).project(camera);const sx=(project.x*.5+.5)*w,sy=(-project.y*.5+.5)*h;hotspots[i].style.transform=`translate3d(${sx-(mobile?22:12)}px,${sy-(mobile?22:23)}px,0)`;hotspots[i].style.visibility=markerInViewport(sx,sy,project.z,w,h)?'visible':'hidden';if(i===section-1){selectedX=sx;selectedY=sy;}}
  if(!transitioning&&section>0&&!mobile&&app.classList.contains('panel-visible'))connector.setAttribute('d',connectorPath(selectedX,selectedY,viewport.panelX,viewport.panelY+25));else connector.setAttribute('d','');
  specks.visible=active;
  if(active){for(let i=0;i<72;i++){const age=(i/72+t*5)%1,data=particleData[i];dummy.position.copy(tip).addScaledVector(n,age*.15);dummy.position.x+=data.cos*age*.09;dummy.position.y-=age*age*.32;dummy.position.z+=data.sin*age*.09;dummy.rotation.set(i+age*5,age*8,i*.7);dummy.scale.setScalar((1-age)*data.scale);dummy.updateMatrix();specks.setMatrixAt(i,dummy.matrix);}specks.instanceMatrix.needsUpdate=true;}
  if(draw){renderer.render(scene,camera);perf.cpu[perf.cpuCount++%120]=performance.now()-started;perf.frames++;}
- window.previewState={progress:p,cameraAngle:yaw,cutProgress:t,tip:tip.toArray(),strokeLength,revision:'latelier-mobile5',triangles:renderer.info.render.triangles};
+ window.previewState={progress:p,cameraAngle:yaw,cutProgress:t,tip:tip.toArray(),strokeLength,revision:'latelier-camera11',cameraPose:{...pose},triangles:renderer.info.render.triangles};
  // Bounded DOM diagnostics support read-only browser QA without a debug overlay.
  if(ready&&(!moving||perf.frames%30===0))main.dataset.renderMetrics=JSON.stringify(window.previewMetrics());
 }

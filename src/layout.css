@@ -153,3 +153,5 @@ html.native-mobile::-webkit-scrollbar{display:none}
 .hotspot.selected .dot{background:rgba(239,51,73,.18);box-shadow:0 0 24px rgba(239,51,73,.2)}
 #connector path{stroke:rgba(239,51,73,.6)}
 @media(min-width:761px) and (min-height:481px){#panel{width:min(44%,760px)}}
+/* Reference mobile composition: focused surface above a taller reading panel. */
+@media(max-width:760px) and (min-height:481px){#panel{top:max(155px,36svh);bottom:calc(79px + env(safe-area-inset-bottom))}}
