@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {cameraPoseFor,cameraCoordinates,REFERENCE_POSES,HEAD_DISTANCE_SCALE,headTargetY} from '../src/camera-choreography.js';
+import {cameraPoseFor,cameraCoordinates,REFERENCE_POSES,headTargetY} from '../src/camera-choreography.js';
 import Motion from '../src/reference-motion.js';
 import * as THREE from 'three';
 const near=(a,b)=>assert(Math.abs(a-b)<1e-9,`${a} != ${b}`);
@@ -8,7 +8,7 @@ for(const mobile of [false,true]){
  for(let i=0;i<5;i++){
   const p=cameraPoseFor(i,mobile),ref=REFERENCE_POSES[i];
   near(p.theta,ref.theta);near(p.phi,ref.phi);near(p.y,headTargetY(ref.y));
-  near(home.radius/p.radius,mobile?(i?14.6/5.4:1):11.9/ref.radius);
+  near(p.radius,(mobile?(i?5.4:14.6):ref.radius)*.13+(i?(mobile?.65:.45):0));
   const xyz=cameraCoordinates(p);near(Math.hypot(xyz.x,xyz.y-p.y,xyz.z),p.radius);
   const w=mobile?390:1440,h=mobile?844:1000,c=new THREE.PerspectiveCamera(43,w/h,.01,50);
   c.position.set(xyz.x,xyz.y,xyz.z);c.lookAt(0,p.y,0);c.setViewOffset(w,h,p.sx*w/2,-p.sy*h/2,w,h);c.updateMatrixWorld();
@@ -20,4 +20,4 @@ for(const mobile of [false,true]){
  for(let n=0;n<600;n++)m.step(1/60);assert(!m.active);for(const k of Motion.KEYS)near(m.pose[k],cameraPoseFor(3,mobile)[k]);
  m.reset(home);assert(!m.active);near(m.pose.radius,home.radius);
 }
-console.log('PASS: authored angles/elevation, exact desktop/mobile zoom ratios, target-height mapping, projection signs, all moving axes, continuous interruptions, settle and reset.');
+console.log('PASS: authored angles/elevation, v11 overview/targets/offsets with focused-only retreat, projection signs, all moving axes, continuous interruptions, settle and reset.');

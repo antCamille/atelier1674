@@ -14,7 +14,7 @@ for(const variant of ['','_mobile']){
   const hit=ray.intersectObject(head,true)[0];assert(hit,`${s.id} misses ${variant} head`);
   const anchor=hit.point.addScaledVector(n,.004);
   for(const [w,h] of [[1440,1000],[1024,768],[390,844],[360,640],[844,390]]){
-   const mobile=w<=760,pose=cameraPoseFor(i+1,mobile),xyz=cameraCoordinates(pose);
+   const mobile=w<=760,pose=cameraPoseFor(i+1,mobile,w/h),xyz=cameraCoordinates(pose);
    const camera=new THREE.PerspectiveCamera(43,w/h,.01,50);
    camera.position.set(xyz.x,xyz.y,xyz.z);camera.lookAt(0,xyz.targetY,0);
    camera.setViewOffset(w,h,pose.sx*w/2,-pose.sy*h/2,w,h);camera.updateMatrixWorld();
